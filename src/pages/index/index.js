@@ -1,9 +1,17 @@
 'use strict';
 
+/*
+	TODO:
+		* Draw stickman
+		* Win/lose feedback
+		* API call to get film
+		* Clues (API call)
+			- Director / year / top actor/actress / awards
+		* Link to IMDB on game over
+*/
+
 import React, { Component } from 'react';
 import Loading from '~/components/loading';
-
-// const NUMBER_OF_PERMITTED_GUESSES = 11;
 
 const PERMITTED_CHARACTERS = [
 	'0',
@@ -49,10 +57,9 @@ class Home extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			guessesTaken: 0,
+			remainingGuesses: 11,
 			gameWon: false,
 			gameLost: false,
-			hasReachGuessLimit: false,
 		};
 	}
 
@@ -73,10 +80,10 @@ class Home extends Component {
 		const isValidCharacter = PERMITTED_CHARACTERS.includes(char);
 		if (!isValidCharacter) return;
 		this.checkCharacter(char);
+		this.updateRemainingGuesses();
 	};
 
 	checkCharacter = (char) => {
-		this.incrementGuessCount();
 		if (
 			!this.state.answerArray.includes(char.toLowerCase()) &&
 			!this.state.answerArray.includes(char.toUpperCase())
@@ -90,7 +97,15 @@ class Home extends Component {
 		this.setState({ answerArrayObfuscated: newArray });
 	};
 
-	incrementGuessCount = () => {};
+	updateRemainingGuesses = () => {
+		const currentVal = this.state.remainingGuesses;
+		const newVal = currentVal - 1;
+		this.setState({ remainingGuesses: newVal });
+		if (newVal === 0) {
+			this.revealAnswer();
+			this.setState({ gameLost: true });
+		}
+	};
 
 	addEventListeners = () => {
 		document.addEventListener('keyup', (e) => this.validateKeyPress(e));
@@ -106,11 +121,22 @@ class Home extends Component {
 		return (
 			<>
 				<props.theme.layout.Wrap>
-					<props.theme.typography.H1>Movie Hangman</props.theme.typography.H1>
-					{state.hasReachGuessLimit && <p>Game over!</p>}
-					{state.answerArrayObfuscated.map((char, index) => {
-						return <span key={index}>{char}</span>;
-					})}
+					<props.theme.typography.H1>
+						{state.answerArrayObfuscated.map((char, index) => {
+							return <span key={index}>{char}</span>;
+						})}
+					</props.theme.typography.H1>
+					{!state.gameLost && (
+						<p>
+							You have {state.remainingGuesses} {`${state.remainingGuesses > 1 ? 'guesses' : 'guess'}`}{' '}
+							left
+						</p>
+					)}
+					{state.gameLost && (
+						<p>
+							Lost! <a href="/">Play again?</a>
+						</p>
+					)}
 				</props.theme.layout.Wrap>
 			</>
 		);
