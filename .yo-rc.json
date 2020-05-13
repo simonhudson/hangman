@@ -1,0 +1,7 @@
+{
+  "generator-next-app": {
+    "projectName": "Hangman",
+    "projectNameSlug": "hangman",
+    "copyUtilities": "n"
+  }
+}
