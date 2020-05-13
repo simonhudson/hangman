@@ -12,6 +12,7 @@
 
 import React, { Component } from 'react';
 import Loading from '~/components/loading';
+import { get } from '~/api';
 
 const PERMITTED_CHARACTERS = [
 	'0',
@@ -64,7 +65,14 @@ class Home extends Component {
 	}
 
 	componentDidMount = () => {
-		const answer = 'The Godfather'; // Replace with API call to fetch random movie
+		this.setAnswer();
+		this.addEventListeners();
+	};
+
+	setAnswer = async () => {
+		const data = await get(`movie/top_rated?api_key=${process.env.API_KEY}`);
+		const results = data.data.results;
+		const answer = results[Math.floor(Math.random() * results.length)].title;
 		const answerArray = answer.split('');
 		const answerArrayObfuscated = [];
 		answerArray.forEach((char) => {
@@ -72,7 +80,6 @@ class Home extends Component {
 			answerArrayObfuscated.push(newChar);
 		});
 		this.setState({ answer, answerArray, answerArrayObfuscated });
-		this.addEventListeners();
 	};
 
 	validateKeyPress = (e) => {
