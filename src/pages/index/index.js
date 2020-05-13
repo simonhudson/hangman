@@ -2,9 +2,10 @@
 
 /*
 	TODO:
-		* Draw stickman
+		* Solve
+		* show guessed chars
 		* Win/lose feedback
-		* API call to get film
+		* Draw stickman
 		* Clues (API call)
 			- Director / year / top actor/actress / awards
 		* Link to IMDB on game over
@@ -12,6 +13,7 @@
 
 import React, { Component } from 'react';
 import Loading from '~/components/loading';
+import VisuallyHidden from '~/components/visually-hidden';
 import { get } from '~/api';
 
 const PERMITTED_CHARACTERS = [
@@ -62,6 +64,7 @@ class Home extends Component {
 			gameWon: false,
 			gameLost: false,
 		};
+		this.solveInput = React.createRef();
 	}
 
 	componentDidMount = () => {
@@ -85,7 +88,8 @@ class Home extends Component {
 	validateKeyPress = (e) => {
 		const char = e.key;
 		const isValidCharacter = PERMITTED_CHARACTERS.includes(char);
-		if (!isValidCharacter) return;
+		const solveInputHasFocus = document.activeElement === this.solveInput.current;
+		if (!isValidCharacter || solveInputHasFocus) return;
 		this.checkCharacter(char);
 		this.updateRemainingGuesses();
 	};
@@ -122,6 +126,14 @@ class Home extends Component {
 		this.setState({ answerArrayObfuscated: this.state.answerArray });
 	};
 
+	validateGuess = (e) => {
+		e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+		if (this.solveInput.current.value.toLowerCase() === this.state.answer.toLowerCase()) {
+			this.revealAnswer();
+			this.setState({ gameWon: true });
+		}
+	};
+
 	render = () => {
 		const { props, state } = this;
 		if (!state.answerArrayObfuscated) return <Loading />;
@@ -134,14 +146,28 @@ class Home extends Component {
 						})}
 					</props.theme.typography.H1>
 					{!state.gameLost && (
-						<p>
-							You have {state.remainingGuesses} {`${state.remainingGuesses > 1 ? 'guesses' : 'guess'}`}{' '}
-							left
-						</p>
+						<>
+							<p>
+								You have {state.remainingGuesses}{' '}
+								{`${state.remainingGuesses > 1 ? 'guesses' : 'guess'}`} left
+							</p>
+							<form onSubmit={(e) => this.validateGuess(e)}>
+								<VisuallyHidden>
+									<label htmlFor="solve">Solve it!</label>
+								</VisuallyHidden>
+								<input ref={this.solveInput} type="text" id="solve" name="solve" />
+								<input type="submit" value="Solve it!" />
+							</form>
+						</>
 					)}
 					{state.gameLost && (
 						<p>
 							Lost! <a href="/">Play again?</a>
+						</p>
+					)}
+					{state.gameWon && (
+						<p>
+							Won! <a href="/">Play again?</a>
 						</p>
 					)}
 				</props.theme.layout.Wrap>
