@@ -2,7 +2,7 @@
 
 /*
 	TODO:
-		* Solve
+		* Give up
 		* show guessed chars
 		* Win/lose feedback
 		* Draw stickman
@@ -148,7 +148,7 @@ class Home extends Component {
 					{!state.gameLost && !state.gameWon && (
 						<>
 							<p>
-								You have {state.remainingGuesses}{' '}
+								You have <strong>{state.remainingGuesses}</strong>{' '}
 								{`${state.remainingGuesses > 1 ? 'guesses' : 'guess'}`} left
 							</p>
 							<form onSubmit={(e) => this.validateGuess(e)}>
