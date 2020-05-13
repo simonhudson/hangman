@@ -15,6 +15,7 @@ const H1 = (props) => {
 		font-weight: 400;
 		font-size: ${rem(50)};
 		margin-bottom: 1rem;
+		text-align: center;
 	`;
 
 	return <StyledH1>{props.children}</StyledH1>;

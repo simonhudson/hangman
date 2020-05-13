@@ -8,6 +8,7 @@ const Wrapper = styled.footer`
 	margin-top: ${rem(40)};
 	padding: ${rem(20)} 0;
 	text-align: right;
+	width: 100%;
 `;
 
 const Text = styled.p`

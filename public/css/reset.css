@@ -19,6 +19,10 @@ html {
     overflow: hidden;
 }
 
+main {
+    padding: 20px 0;
+}
+
 p {
     line-height: 1.8rem;
     margin-bottom: 2rem;

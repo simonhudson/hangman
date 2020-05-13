@@ -145,7 +145,7 @@ class Home extends Component {
 							return <span key={index}>{char}</span>;
 						})}
 					</props.theme.typography.H1>
-					{!state.gameLost && (
+					{!state.gameLost && !state.gameWon && (
 						<>
 							<p>
 								You have {state.remainingGuesses}{' '}
