@@ -4,11 +4,7 @@
 	TODO:
 		* Give up
 		* show guessed chars
-		* Win/lose feedback
 		* Draw stickman
-		* Clues (API call)
-			- Director / year / top actor/actress / awards
-		* Link to IMDB on game over
 */
 
 import React, { Component } from 'react';
@@ -63,6 +59,10 @@ class Home extends Component {
 			remainingGuesses: 11,
 			gameWon: false,
 			gameLost: false,
+			gameOver: false,
+			remainingClues: 3,
+			clues: {},
+			isLoading: true,
 		};
 		this.solveInput = React.createRef();
 	}
@@ -73,16 +73,48 @@ class Home extends Component {
 	};
 
 	setAnswer = async () => {
-		const data = await get(`movie/top_rated?api_key=${process.env.API_KEY}`);
-		const results = data.data.results;
-		const answer = results[Math.floor(Math.random() * results.length)].title;
-		const answerArray = answer.split('');
-		const answerArrayObfuscated = [];
-		answerArray.forEach((char) => {
-			const newChar = char === ' ' ? char : '*';
-			answerArrayObfuscated.push(newChar);
+		get(`get-top-rated-movies`).then((response) => {
+			let { data } = response;
+			data = data.slice(0, 20);
+			const answer = data[Math.floor(Math.random() * data.length)];
+			const id = answer.id.split('/')[2];
+			this.setState({ answerId: id });
+			get(`get-overview-details?tconst=${id}`).then((response) => {
+				const { data } = response;
+				const title = data.title.title;
+				const year = data.title.year;
+				const genres = data.genres;
+				const image = data.title.image.url;
+				const answerArray = title.split('');
+				const answerArrayObfuscated = [];
+				answerArray.forEach((char) => {
+					const newChar = char === ' ' ? char : '*';
+					answerArrayObfuscated.push(newChar);
+				});
+				this.setState({
+					answer: title,
+					answerArray,
+					answerArrayObfuscated,
+					answerImage: image,
+					clues: { year, genres },
+				});
+			});
+			get(`get-top-cast?tconst=${id}`).then((response) => {
+				let { data } = response;
+				data = data.slice(0, 3);
+				const queryParams = `?tconst=${id}&currentCountry=GB&purchaseCountry=GB&id=${
+					data[0].split('/')[2]
+				}&id=${data[2].split('/')[2]}&id=${data[2].split('/')[2]}`;
+				get(`get-charname-list${queryParams}`).then((response) => {
+					const cast = [];
+					for (let key in response.data) cast.push(response.data[key].name.name);
+					this.setState((prevState) => ({
+						clues: { cast, year: prevState.clues.year, genres: prevState.clues.genres },
+						isLoading: false,
+					}));
+				});
+			});
 		});
-		this.setState({ answer, answerArray, answerArrayObfuscated });
 	};
 
 	validateKeyPress = (e) => {
@@ -114,29 +146,34 @@ class Home extends Component {
 		this.setState({ remainingGuesses: newVal });
 		if (newVal === 0) {
 			this.revealAnswer();
-			this.setState({ gameLost: true });
+			this.setState({ gameLost: true, gameOver: true });
 		}
 	};
 
-	addEventListeners = () => {
-		document.addEventListener('keyup', (e) => this.validateKeyPress(e));
-	};
+	addEventListeners = () => document.addEventListener('keyup', (e) => this.validateKeyPress(e));
 
-	revealAnswer = () => {
-		this.setState({ answerArrayObfuscated: this.state.answerArray });
-	};
+	revealAnswer = () => this.setState({ answerArrayObfuscated: this.state.answerArray });
 
 	validateGuess = (e) => {
 		e.preventDefault ? e.preventDefault() : (e.returnValue = false);
 		if (this.solveInput.current.value.toLowerCase() === this.state.answer.toLowerCase()) {
 			this.revealAnswer();
-			this.setState({ gameWon: true });
+			this.setState({ gameWon: true, gameOver: true });
+		}
+	};
+
+	revealClue = (e) => {
+		e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+		const currentVal = this.state.remainingClues;
+		if (currentVal > 0) {
+			const newVal = currentVal - 1;
+			this.setState({ remainingClues: newVal });
 		}
 	};
 
 	render = () => {
 		const { props, state } = this;
-		if (!state.answerArrayObfuscated) return <Loading />;
+		if (state.isLoading) return <Loading text="Preparing your game" />;
 		return (
 			<>
 				<props.theme.layout.Wrap>
@@ -151,6 +188,12 @@ class Home extends Component {
 								You have <strong>{state.remainingGuesses}</strong>{' '}
 								{`${state.remainingGuesses > 1 ? 'guesses' : 'guess'}`} left
 							</p>
+							<button onClick={this.revealClue} type="button">
+								Give me a clue ({state.remainingClues} clues left)
+							</button>
+							{state.remainingClues < 3 && <p>Released in {state.clues.year}</p>}
+							{state.remainingClues < 2 && <p>Genres {state.clues.genres.join(', ')}</p>}
+							{state.remainingClues < 1 && <p>Starred {state.clues.cast.join(', ')}</p>}
 							<form onSubmit={(e) => this.validateGuess(e)}>
 								<VisuallyHidden>
 									<label htmlFor="solve">Solve it!</label>
@@ -160,15 +203,18 @@ class Home extends Component {
 							</form>
 						</>
 					)}
-					{state.gameLost && (
-						<p>
-							Lost! <a href="/">Play again?</a>
-						</p>
-					)}
-					{state.gameWon && (
-						<p>
-							Won! <a href="/">Play again?</a>
-						</p>
+					{state.gameOver && (
+						<>
+							<p>
+								You {`${state.gameLost ? 'lost' : 'won'}`}! <a href="/">Play again?</a>
+							</p>
+							<p>
+								<a href={`https://www.imdb.com/title/${state.answerId}`}>
+									View <strong>{this.state.answer}</strong> on IMDb
+								</a>
+							</p>
+							<img src={state.answerImage} />
+						</>
 					)}
 				</props.theme.layout.Wrap>
 			</>

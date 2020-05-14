@@ -1,37 +1,35 @@
 'use strict';
 
-import axios from 'axios';
-
 const COMMON_OPTIONS = {
+	headers: {
+		'x-rapidapi-host': 'imdb8.p.rapidapi.com',
+		'x-rapidapi-key': process.env.API_KEY,
+	},
 	dataType: 'json',
 	mode: 'cors',
 };
 
-async function makeRequest(endpoint, method) {
+const makeRequest = (endpoint, method) => {
 	let responseObj = {
-		err: null,
+		error: null,
+		data: null,
 	};
 	if (!endpoint || !method) return null;
 	const options = { ...COMMON_OPTIONS, method };
-	try {
-		const res = await axios[method.toLowerCase()](`${process.env.API_URL}/${endpoint}`, options);
-		responseObj = { ...responseObj, ...res };
-		return responseObj;
-	} catch (err) {
-		responseObj.err = err;
-		return responseObj;
-	}
-}
+	return new Promise((resolve, reject) => {
+		fetch(`${process.env.API_URL}/${endpoint}`, options)
+			.then((response) => response.json())
+			.then((data) => {
+				responseObj.data = data;
+				resolve(responseObj);
+			})
+			.catch((error) => {
+				responseObj.error = error;
+				reject(responseObj);
+			});
+	});
+};
 
-export async function get(endpoint) {
-	return await makeRequest(endpoint, 'GET');
-}
-export async function post(endpoint) {
-	return await makeRequest(endpoint, 'POST');
-}
-export async function put(endpoint) {
-	return await makeRequest(endpoint, 'PUT');
-}
-export async function patch(endpoint) {
-	return await makeRequest(endpoint, 'PATCH');
+export function get(endpoint) {
+	return makeRequest(endpoint, 'GET');
 }
