@@ -11,6 +11,7 @@ import React, { Component } from 'react';
 import Loading from '~/components/loading';
 import VisuallyHidden from '~/components/visually-hidden';
 import { get } from '~/api';
+import { Image } from './styles';
 
 const PERMITTED_CHARACTERS = [
 	'0',
@@ -52,6 +53,8 @@ const PERMITTED_CHARACTERS = [
 	'z',
 ];
 
+const OBFUSCATED_CHARACTER = '_';
+
 class Home extends Component {
 	constructor(props) {
 		super(props);
@@ -75,20 +78,20 @@ class Home extends Component {
 	setAnswer = async () => {
 		get(`get-top-rated-movies`).then((response) => {
 			let { data } = response;
-			data = data.slice(0, 20);
+			data = data.slice(0, 50);
 			const answer = data[Math.floor(Math.random() * data.length)];
 			const id = answer.id.split('/')[2];
 			this.setState({ answerId: id });
 			get(`get-overview-details?tconst=${id}`).then((response) => {
 				const { data } = response;
-				const title = data.title.title;
+				let title = data.title.title;
 				const year = data.title.year;
 				const genres = data.genres;
 				const image = data.title.image.url;
 				const answerArray = title.split('');
 				const answerArrayObfuscated = [];
 				answerArray.forEach((char) => {
-					const newChar = char === ' ' ? char : '*';
+					const newChar = char === ' ' ? char : OBFUSCATED_CHARACTER;
 					answerArrayObfuscated.push(newChar);
 				});
 				this.setState({
@@ -171,6 +174,11 @@ class Home extends Component {
 		}
 	};
 
+	giveUp = () => {
+		this.revealAnswer();
+		this.setState({ gameLost: true, gameOver: true });
+	};
+
 	render = () => {
 		const { props, state } = this;
 		if (state.isLoading) return <Loading text="Preparing your game" />;
@@ -201,6 +209,7 @@ class Home extends Component {
 								<input ref={this.solveInput} type="text" id="solve" name="solve" />
 								<input type="submit" value="Solve it!" />
 							</form>
+							<button onClick={this.giveUp}>I give up</button>
 						</>
 					)}
 					{state.gameOver && (
@@ -210,10 +219,10 @@ class Home extends Component {
 							</p>
 							<p>
 								<a href={`https://www.imdb.com/title/${state.answerId}`}>
-									View <strong>{this.state.answer}</strong> on IMDb
+									View <strong>&quot;{this.state.answer}&quot;</strong> on IMDb
 								</a>
 							</p>
-							<img src={state.answerImage} />
+							<Image src={state.answerImage} />
 						</>
 					)}
 				</props.theme.layout.Wrap>
