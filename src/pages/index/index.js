@@ -11,7 +11,7 @@ import React, { Component } from 'react';
 import Loading from '~/components/loading';
 import VisuallyHidden from '~/components/visually-hidden';
 import { get } from '~/api';
-import { Image } from './styles';
+import { Image } from './index.styles';
 
 const PERMITTED_CHARACTERS = [
 	'0',
